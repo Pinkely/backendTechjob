@@ -32,8 +32,10 @@ services:
     environment:
       PMA_HOSTS: mysql
       PMA_PORT: 3309
-#      PMA_USER: root
-#      PMA_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: techjob
+      MYSQL_PASSWORD: techjob
+      MYSQL_DATABASE: techjob
     networks:
       - mysql-network
  
