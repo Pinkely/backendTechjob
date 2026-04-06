@@ -1,5 +1,136 @@
-import pool from "../config/db.js"; // นำเข้าตู้เก็บเอกสาร (ฐานข้อมูล)
-import bcrypt from "bcryptjs"; // นำเข้าเครื่องมือสำหรับเข้ารหัสผ่านให้ปลอดภัย (แปลงตัวหนังสือให้อ่านไม่ออก)
+import pool from "../config/db.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+
+
+export const login = async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        if (!username || !password) {
+            return res.status(400).json({ message: 'กรุณาระบุ username และ password' });
+        }
+        // ค้นหาผู้ใช้งานจากฐานข้อมูล
+        const [users] = await pool.execute('SELECT * FROM users WHERE username = ?', [username]);
+
+        if (users.length === 0) {
+            return res.status(401).json({ message: 'Username หรือ Password ไม่ถูกต้อง' });
+        }
+        const user = users[0];
+        // ตรวจสอบรหัสผ่านที่รับมา กับรหัสผ่านในฐานข้อมูล (ที่ถูก Hash ไว้)
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Username หรือ Password ไม่ถูกต้อง' });
+        }
+        // ดึง JWT_SECRET จากไฟล์ .env (ถ้าไม่มีให้ใช้ค่าเริ่มต้น)
+        const secretKey = process.env.JWT_SECRET || 'my_super_secret_key_12345';
+        // สร้าง Token
+        const token = jwt.sign(
+            { 
+                user_id: user.user_id, 
+                username: user.username, 
+                role: user.role 
+            },
+            secretKey,
+            { expiresIn: '2h' }
+        );
+
+        return res.status(200).json({
+            message: 'เข้าสู่ระบบสำเร็จ',
+            token: token
+        });
+
+    } catch (error) {
+        console.error('Error in login:', error);
+        return res.status(500).json({ message: 'เกิดข้อผิดพลาดจากเซิร์ฟเวอร์' });
+    }
+};
+
+// POST /users/register สำหรับลงทะเบียนผู้ใช้งานใหม่
+export const register = async (req, res) => {
+    try {
+        const { username, password, name, role, type, status, email, phone, department, supervisor_id } = req.body;
+
+        if (!username || !password || !name) {
+            return res.status(400).json({ message: 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน (username, password, name)' });
+        }
+        const [existingUsers] = await pool.execute('SELECT * FROM users WHERE username = ?', [username]);
+        if (existingUsers.length > 0) {
+            return res.status(400).json({ message: 'Username นี้ถูกใช้งานแล้ว' });
+        }
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const sql = `
+            INSERT INTO users 
+            (username, password, name, role, type, status, email, phone, department, supervisor_id) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        const values = [
+            username, 
+            hashedPassword, 
+            name, 
+            role || null,
+            type || null, 
+            status || 'ว่าง',
+            email || null, 
+            phone || null, 
+            department || null, 
+            supervisor_id || null
+        ];
+
+        await pool.execute(sql, values);
+
+        return res.status(201).json({ message: 'ลงทะเบียนผู้ใช้งานสำเร็จ' });
+
+    } catch (error) {
+        console.error('Error in register:', error);
+        return res.status(500).json({ message: 'เกิดข้อผิดพลาดจากเซิร์ฟเวอร์' });
+    }
+};
+
+// GET /users สำหรับดึงข้อมูลผู้ใช้งานทั้งหมดในระบบ
+export const getUsers = async (req, res) => {
+    try {
+        // ดึงข้อมูลทั้งหมด แต่ละเว้นไม่ดึง password ออกมาเพื่อความปลอดภัย
+        const [users] = await pool.execute(
+            'SELECT user_id, username, name, role, type, status, email, phone, department, supervisor_id, created_at FROM users'
+        );
+        // ส่ง Response ตามสเปก: Res. Body: { message, users }
+        return res.status(200).json({
+            message: 'ดึงข้อมูลผู้ใช้งานสำเร็จ',
+            users: users
+        });
+    } catch (error) {
+        console.error('Error in getUsers:', error);
+        return res.status(500).json({ message: 'เกิดข้อผิดพลาดในการดึงข้อมูล' });
+    }
+};
+
+export const getUsersByRole = async (req, res) => {
+  const { role } = req.params;
+  try {
+    // แก้ไขเป็น user_id ตามรูป php.png
+    const [rows] = await pool.query("SELECT user_id, username, role, name, status FROM users WHERE role = ?", [role]);
+    res.status(200).json({ message: "Success", users: rows });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
+// DELETE [/users]/:id
+export const deleteUser = async (req, res) => {
+  const { id } = req.params;
+  try {
+    // แก้ไขเป็น user_id
+    const [result] = await pool.query("DELETE FROM users WHERE user_id = ?", [id]);
+    if (result.affectedRows === 0) return res.status(404).json({ message: "User not found" });
+    res.status(200).json({ message: "User deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
 
 // 1. ดึงข้อมูลผู้ใช้งานตาม ID (เหมือนขอดูแฟ้มประวัติพนักงาน 1 คน)
 export const getUserById = async (req, res) => {
@@ -89,95 +220,6 @@ export const updatePassword = async (req, res) => {
     res.status(200).json({ message: "เปลี่ยนรหัสผ่านสำเร็จ" });
   } catch (error) {
     console.error("Error in updatePassword:", error);
-    res.status(500).json({ message: "เกิดข้อผิดพลาดที่เซิร์ฟเวอร์" });
-  }
-};
-
-// 4. สมัครสมาชิกใหม่ (Register)
-export const register = async (req, res) => {
-  try {
-    const { username, name, email, password, phone, department } = req.body;
-
-    // ตรวจสอบว่ามีอีเมลหรือชื่อผู้ใช้นี้ซ้ำในระบบหรือไม่
-    const [existing] = await pool.query("SELECT * FROM users WHERE email = ? OR username = ?", [email, username]);
-    if (existing.length > 0) {
-      return res.status(400).json({ message: "อีเมลหรือชื่อผู้ใช้นี้มีในระบบแล้ว" });
-    }
-
-    // เข้ารหัสผ่าน
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // กำหนดประเภทผู้ใช้เริ่มต้นเป็น 'user'
-    const defaultType = 'user';
-
-    // บันทึกข้อมูลลงฐานข้อมูล (เพิ่มคอลัมน์ type ถ้าใน DB ของคุณมี)
-    await pool.query(
-      "INSERT INTO users (username, name, email, password, phone, department, type) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [username, name, email, hashedPassword, phone, department, defaultType]
-    );
-
-    res.status(201).json({ message: "สมัครสมาชิกสำเร็จ" });
-  } catch (error) {
-    console.error("Error in register:", error);
-    res.status(500).json({ message: "เกิดข้อผิดพลาดที่เซิร์ฟเวอร์" });
-  }
-};
-
-// 5. เข้าสู่ระบบ (Login)
-export const login = async (req, res) => {
-  try {
-    const { email, password } = req.body; // รับเป็น email หรือ username ก็ได้
-
-    // ค้นหาผู้ใช้จาก email หรือ username
-    const [rows] = await pool.query("SELECT * FROM users WHERE email = ? OR username = ?", [email, email]);
-
-    if (rows.length === 0) {
-      return res.status(404).json({ message: "ไม่พบผู้ใช้งานในระบบ" });
-    }
-
-    const user = rows[0];
-
-    // ตรวจสอบรหัสผ่าน
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(400).json({ message: "รหัสผ่านไม่ถูกต้อง" });
-    }
-
-    // ลบรหัสผ่านออกจากข้อมูลที่จะส่งกลับไปเพื่อความปลอดภัย
-    delete user.password;
-
-    res.status(200).json({
-      message: "เข้าสู่ระบบสำเร็จ",
-      user: user
-    });
-  } catch (error) {
-    console.error("Error in login:", error);
-    res.status(500).json({ message: "เกิดข้อผิดพลาดที่เซิร์ฟเวอร์" });
-  }
-};
-
-// 6. ลืมรหัสผ่าน (Forgot Password - แบบกำหนดรหัสใหม่โดยใช้อีเมล)
-export const resetPasswordByEmail = async (req, res) => {
-  try {
-    const { email, newPassword } = req.body;
-
-    // ตรวจสอบว่ามีอีเมลนี้จริงไหม
-    const [rows] = await pool.query("SELECT user_id FROM users WHERE email = ?", [email]);
-    if (rows.length === 0) {
-      return res.status(404).json({ message: "ไม่พบอีเมลนี้ในระบบ" });
-    }
-
-    // เข้ารหัสผ่านใหม่
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
-
-    // อัปเดตรหัสผ่านใหม่
-    await pool.query("UPDATE users SET password = ? WHERE email = ?", [hashedPassword, email]);
-
-    res.status(200).json({ message: "รีเซ็ตรหัสผ่านสำเร็จ" });
-  } catch (error) {
-    console.error("Error in resetPassword:", error);
     res.status(500).json({ message: "เกิดข้อผิดพลาดที่เซิร์ฟเวอร์" });
   }
 };

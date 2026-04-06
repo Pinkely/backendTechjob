@@ -1,0 +1,977 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "TechJob API",
+    "description": "ระบบจัดการใบงานช่าง",
+    "version": "1.0.0"
+  },
+  "host": "localhost:3000",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "Users",
+      "description": "จัดการข้อมูลผู้ใช้งานและระบบ Login"
+    },
+    {
+      "name": "Works",
+      "description": "จัดการใบงาน การมอบหมายงาน และสถานะงาน"
+    },
+    {
+      "name": "Materials",
+      "description": "จัดการวัสดุอุปกรณ์และการขอเบิก"
+    }
+  ],
+  "schemes": [
+    "http"
+  ],
+  "securityDefinitions": {
+    "bearerAuth": {
+      "type": "apiKey",
+      "in": "header",
+      "name": "Authorization",
+      "description": "ใส่ค่า: Bearer <token>"
+    }
+  },
+  "paths": {
+    "/users/": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "ดึงข้อมูลผู้ใช้งานทั้งหมด",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/users/role/{role}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "ดึงข้อมูลผู้ใช้งานตาม Role",
+        "description": "",
+        "parameters": [
+          {
+            "name": "role",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "ดึงข้อมูลผู้ใช้งานตาม ID",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/users/user/{id}": {
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "แก้ไขข้อมูลผู้ใช้งาน",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "User ID"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "example": "newname"
+                },
+                "email": {
+                  "type": "string",
+                  "example": "new@mail.com"
+                },
+                "phone": {
+                  "type": "string",
+                  "example": "0022"
+                },
+                "department": {
+                  "type": "string",
+                  "example": "111"
+                },
+                "id": {
+                  "type": "number",
+                  "example": 1
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "ลบผู้ใช้งาน",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/users/password/{id}": {
+      "patch": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "เปลี่ยนรหัสผ่าน",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "User ID"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "oldPassword": {
+                  "type": "string",
+                  "example": "old123"
+                },
+                "newPassword": {
+                  "type": "string",
+                  "example": "new123"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/users/login": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "เข้าสู่ระบบ",
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "description": "กรอก Username และ Password",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "username": {
+                  "type": "string",
+                  "example": "admin"
+                },
+                "password": {
+                  "type": "string",
+                  "example": "123"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/users/register": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "ลงทะเบียนผู้ใช้ใหม่",
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "username": {
+                  "type": "string",
+                  "example": "user01"
+                },
+                "password": {
+                  "type": "string",
+                  "example": "123"
+                },
+                "name": {
+                  "type": "string",
+                  "example": "John Doe"
+                },
+                "email": {
+                  "type": "string",
+                  "example": "john@mail.com"
+                },
+                "role": {
+                  "type": "string",
+                  "example": "technician"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/materials/materials": {
+      "get": {
+        "tags": [
+          "Materials"
+        ],
+        "summary": "ดึงข้อมูลอุปกรณ์/วัสดุทั้งหมด",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/materials/material/{id}": {
+      "get": {
+        "tags": [
+          "Materials"
+        ],
+        "summary": "ดึงข้อมูลอุปกรณ์ตาม ID",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/materials/create": {
+      "post": {
+        "tags": [
+          "Materials"
+        ],
+        "summary": "เพิ่มรายการอุปกรณ์ใหม่",
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "example": "สายไฟ AWG"
+                },
+                "quantity": {
+                  "type": "number",
+                  "example": 100
+                },
+                "unit": {
+                  "type": "string",
+                  "example": "เมตร"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/materials/request/{id}/approve": {
+      "patch": {
+        "tags": [
+          "Materials"
+        ],
+        "summary": "อนุมัติหรือปฏิเสธคำขอเบิกอุปกรณ์",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Request ID"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "example": "approved"
+                },
+                "admin_id": {
+                  "type": "number",
+                  "example": 1
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/materials/{id}": {
+      "delete": {
+        "tags": [
+          "Materials"
+        ],
+        "summary": "ลบวัสดุตาม ID",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Materials"
+        ],
+        "summary": "แก้ไขข้อมูลวัสดุตาม ID",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Material ID"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "example": "สายไฟ AWG"
+                },
+                "quantity": {
+                  "type": "number",
+                  "example": 150
+                },
+                "unit": {
+                  "type": "string",
+                  "example": "เมตร"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/works/creatework": {
+      "post": {
+        "tags": [
+          "Works"
+        ],
+        "summary": "สร้างใบงานใหม่",
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "job_name": {
+                  "type": "string",
+                  "example": "งานซ่อมบำรุง"
+                },
+                "customer_name": {
+                  "type": "string",
+                  "example": "คุณสมชาย"
+                },
+                "job_type": {
+                  "type": "string",
+                  "example": "ไฟฟ้า"
+                },
+                "job_detail": {
+                  "type": "string",
+                  "example": "ไฟดับชั้น 2"
+                },
+                "location": {
+                  "type": "string",
+                  "example": "ตึก A"
+                },
+                "start_date": {
+                  "type": "string",
+                  "example": "2024-03-25"
+                },
+                "work_time": {
+                  "type": "string",
+                  "example": "09:00"
+                },
+                "supervisor_id": {
+                  "type": "number",
+                  "example": 1
+                },
+                "admin_id": {
+                  "type": "number",
+                  "example": 1
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/works/assign/{id}": {
+      "post": {
+        "tags": [
+          "Works"
+        ],
+        "summary": "มอบหมายงานให้ช่าง",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Work ID"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "technician_id": {
+                  "type": "number",
+                  "example": 5
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/works/getAll": {
+      "get": {
+        "tags": [
+          "Works"
+        ],
+        "summary": "ดึงข้อมูลใบงานทั้งหมด",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/works/getById/{id}": {
+      "get": {
+        "tags": [
+          "Works"
+        ],
+        "summary": "ดึงข้อมูลใบงานตาม ID",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/works/update/{id}": {
+      "put": {
+        "tags": [
+          "Works"
+        ],
+        "summary": "อัปเดตรายละเอียดใบงาน",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Work ID"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "job_name": {
+                  "type": "string",
+                  "example": "ชื่อโครงการใหม่"
+                },
+                "customer_name": {
+                  "type": "string",
+                  "example": "ชื่อลูกค้า"
+                },
+                "job_type": {
+                  "type": "string",
+                  "example": "ประเภทงาน"
+                },
+                "job_detail": {
+                  "type": "string",
+                  "example": "รายละเอียด"
+                },
+                "location": {
+                  "type": "string",
+                  "example": "สถานที่"
+                },
+                "start_date": {
+                  "type": "string",
+                  "example": "2024-03-25"
+                },
+                "work_time": {
+                  "type": "string",
+                  "example": "10:00"
+                },
+                "supervisor_id": {
+                  "type": "number",
+                  "example": 1
+                },
+                "admin_id": {
+                  "type": "number",
+                  "example": 1
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/works/delete/{id}": {
+      "delete": {
+        "tags": [
+          "Works"
+        ],
+        "summary": "ลบใบงาน",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/works/supervisor/{id}": {
+      "get": {
+        "tags": [
+          "Works"
+        ],
+        "summary": "ดึงใบงานตาม ID หัวหน้างาน (Supervisor)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/works/technician/{id}": {
+      "get": {
+        "tags": [
+          "Works"
+        ],
+        "summary": "ดึงใบงานตาม ID ช่าง (Technician)",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/works/{id}/status": {
+      "patch": {
+        "tags": [
+          "Works"
+        ],
+        "summary": "อัปเดตสถานะใบงาน",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/works/{id}/assign/{techId}/status": {
+      "patch": {
+        "tags": [
+          "Works"
+        ],
+        "summary": "ช่างอัปเดตสถานะงานที่ได้รับมอบหมาย",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "techId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/works/{id}/assign/{techId}/review": {
+      "patch": {
+        "tags": [
+          "Works"
+        ],
+        "summary": "หัวหน้างานตรวจรับงานและประเมิน",
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Work ID"
+          },
+          {
+            "name": "techId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Technician ID"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "example": "completed"
+                },
+                "comment": {
+                  "type": "string",
+                  "example": "งานเรียบร้อยดี"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    }
+  }
+}

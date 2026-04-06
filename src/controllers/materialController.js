@@ -1,2 +1,60 @@
 import pool from "../config/db.js";
 
+// export const getMaterials = async  (req, res) => {
+//   try {
+//     // แก้ไขชื่อตารางเป็น material (ไม่มี s) ตามรูป php.png
+//     const [rows] = await pool.query("SELECT * FROM material");
+//     res.status(200).json({ message: "Success", materials: rows });
+//   } catch (error) {
+//     res.status(500).json({ message: "Server Error", error: error.message });
+//   }
+// };
+
+
+const query = async (sql, params) => {
+  const [rows] = await pool.execute(sql, params);
+  return rows;
+};
+
+// GET ทั้งหมด
+export const getAllMaterials = async () => {
+    return await query("SELECT * FROM material ORDER BY material_id DESC", []);
+};
+
+// POST เพิ่มวัสดุใหม่
+export const addNewMaterial = async ({ material_code, name, quantity, unit }) => {
+    const sql = "INSERT INTO material (material_code, name, quantity, unit, status) VALUES (?, ?, ?, ?, 'มี')";
+    return await query(sql, [material_code, name, quantity, unit]);
+};
+
+// PUT แก้ไขวัสดุ
+export const updateMaterialById = async (id, { name, quantity, unit }) => {
+    const sql = "UPDATE material SET name=?, quantity=?, unit=? WHERE material_id=?";
+    return await query(sql, [name, quantity, unit, id]);
+};
+
+// DELETE ลบวัสดุ
+export const deleteMaterialById = async (id) => {
+    return await query("DELETE FROM material WHERE material_id=?", [id]);
+};
+
+export const getMaterialById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    // แก้ไขเป็น material_id และตาราง material
+    const [rows] = await pool.query("SELECT * FROM material WHERE material_id = ?", [id]);
+    if (rows.length === 0) return res.status(404).json({ message: "Material not found" });
+    res.status(200).json({ message: "Success", material: rows[0] });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
+
+export const approveMaterialRequest = async ({ id, status, admin_id }) => {
+  const [result] = await pool.execute(
+    "UPDATE material_request SET status = ?, admin_id = ? WHERE id = ?",
+    [status, admin_id || null, id]
+  )
+  return result
+} 
