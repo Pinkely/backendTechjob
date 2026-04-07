@@ -1,16 +1,5 @@
 import pool from "../config/db.js";
 
-// export const getMaterials = async  (req, res) => {
-//   try {
-//     // แก้ไขชื่อตารางเป็น material (ไม่มี s) ตามรูป php.png
-//     const [rows] = await pool.query("SELECT * FROM material");
-//     res.status(200).json({ message: "Success", materials: rows });
-//   } catch (error) {
-//     res.status(500).json({ message: "Server Error", error: error.message });
-//   }
-// };
-
-
 const query = async (sql, params) => {
   const [rows] = await pool.execute(sql, params);
   return rows;
@@ -27,17 +16,6 @@ export const addNewMaterial = async ({ material_code, name, quantity, unit }) =>
     return await query(sql, [material_code, name, quantity, unit]);
 };
 
-// PUT แก้ไขวัสดุ
-export const updateMaterialById = async (id, { name, quantity, unit }) => {
-    const sql = "UPDATE material SET name=?, quantity=?, unit=? WHERE material_id=?";
-    return await query(sql, [name, quantity, unit, id]);
-};
-
-// DELETE ลบวัสดุ
-export const deleteMaterialById = async (id) => {
-    return await query("DELETE FROM material WHERE material_id=?", [id]);
-};
-
 export const getMaterialById = async (req, res) => {
   const { id } = req.params;
   try {
@@ -49,6 +27,18 @@ export const getMaterialById = async (req, res) => {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
+
+// PUT แก้ไขวัสดุ
+export const updateMaterialById = async (id, { name, quantity, unit }) => {
+    const sql = "UPDATE material SET name=?, quantity=?, unit=? WHERE material_id=?";
+    return await query(sql, [name, quantity, unit, id]);
+};
+
+// DELETE ลบวัสดุ
+export const deleteMaterialById = async (id) => {
+    return await query("DELETE FROM material WHERE material_id=?", [id]);
+};
+
 
 
 export const approveMaterialRequest = async ({ id, status, admin_id }) => {

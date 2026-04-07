@@ -1,20 +1,17 @@
 import express from "express";
+import dotenv from "dotenv";
 import {
   getMaterialById,
-  approveMaterialRequest, 
-  getAllMaterials, addNewMaterial, updateMaterialById, deleteMaterialById
-
+  approveMaterialRequest,
+  getAllMaterials,
+  addNewMaterial,
+  updateMaterialById,
+  deleteMaterialById
 } from "../controllers/materialController.js";
 
+dotenv.config();
 const materialRouter = express.Router();
 
-// --- หมวดหมู่ Materials ---
-
-// materialRouter.get("/materials", async (req, res) => {
-//   // #swagger.tags = ['Materials']
-//   // #swagger.summary = 'ดึงข้อมูลอุปกรณ์/วัสดุทั้งหมด'
-//   getMaterials(req, res);
-// });
 
 materialRouter.get("/:id", async (req, res) => {
   // #swagger.tags = ['Materials']
@@ -22,15 +19,6 @@ materialRouter.get("/:id", async (req, res) => {
   getMaterialById(req, res);
 });
 
-// materialRouter.post("/create", async (req, res) => {
-//   // #swagger.tags = ['Materials']
-//   // #swagger.summary = 'เพิ่มรายการอุปกรณ์ใหม่'
-//   /* #swagger.parameters['body'] = {
-//       in: 'body',
-//       schema: { name: 'สายไฟ AWG', quantity: 100, unit: 'เมตร' }
-//   } */
-//   createMaterial(req, res);
-// });
 
 materialRouter.patch('/request/:id/approve', async (req, res) => {
   // #swagger.tags = ['Materials']
@@ -63,36 +51,36 @@ materialRouter.patch('/request/:id/approve', async (req, res) => {
 
 // 1. ดึงรายการวัสดุทั้งหมด (ใครๆ ก็ดูได้)
 materialRouter.get('/', async (req, res) => {
-    try {
-        const rows = await getAllMaterials();
-        console.log('ดึงข้อมูลสำเร็จ! เริสมาก');
-        res.status(200).json(rows);
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ message: 'Internal Server Error' });
-    }
+  try {
+    const rows = await getAllMaterials();
+    console.log('ดึงข้อมูลสำเร็จ! เริสมาก');
+    res.status(200).json(rows);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
 });
 
 // 2. เพิ่มวัสดุใหม่ (ใครๆ ก็เพิ่มได้)
 materialRouter.post('/add', async (req, res) => {
-    try {
-        await addNewMaterial(req.body);
-        res.status(201).json({ message: 'Created' });
-    } catch (error) {
-        res.status(500).json({ message: 'Internal Server Error' });
-    }
+  try {
+    await addNewMaterial(req.body);
+    res.status(201).json({ message: 'Created' });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
 });
 
 
 
 // 3. ลบวัสดุ (ใครๆ ก็ลบได้)
 materialRouter.delete('/:id', async (req, res) => {
-    try {
-        await deleteMaterialById(req.params.id);
-        res.status(200).json({ message: 'Deleted' });
-    } catch (error) {
-        res.status(500).json({ message: 'Internal Server Error' });
-    }
+  try {
+    await deleteMaterialById(req.params.id);
+    res.status(200).json({ message: 'Deleted' });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
 });
 
 //PUT /🆔 แก้ไขข้อมูลวัสดุ (เช่น แก้ไขชื่อ หรืออัปเดตจำนวนสต็อกหลัก
