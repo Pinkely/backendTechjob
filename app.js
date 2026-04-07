@@ -6,6 +6,7 @@ import { readFileSync } from "fs";
 import userRoutes from "./src/routes/userRoutes.js";
 import materialRoutes from "./src/routes/materialRoutes.js";
 import workRoutes from "./src/routes/workRoutes.js";
+import salaryRoutes from "./src/routes/salaryRoutes.js";
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
 app.use("/users", userRoutes);
 app.use("/materials", materialRoutes);
 app.use("/works", workRoutes);
+app.use("/salary", salaryRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

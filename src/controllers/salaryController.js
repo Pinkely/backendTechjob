@@ -38,12 +38,12 @@ export const getSalariesByUserId = async (userId) => {
 };
 
 // POST /salary/add — เพิ่มรายการเงินเดือน
-export const addSalary = async ({ user_id, amount, month, year, bonus = 0, deduction = 0, note }) => {
+export const addSalary = async ({ user_id, amount, month, year }) => {
   const sql = `
-    INSERT INTO salary (user_id, amount, month, year, bonus, deduction, note, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 'รอจ่าย')
+    INSERT INTO salary (user_id, amount, month, year )
+    VALUES (?, ?, ?, ? )
   `;
-  return await query(sql, [user_id, amount, month, year, bonus, deduction, note || null]);
+  return await query(sql, [user_id, amount, month, year  || null]);
 };
 
 // PUT /salary/:id — แก้ไขข้อมูลเงินเดือน
