@@ -1,63 +1,13 @@
-import pool from "../config/db.js";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-
-export const login = async (req, res) => {
-  try {
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-      return res.status(400).json({ message: 'กรุณาระบุ username และ password' });
-    }
-    const [users] = await pool.execute('SELECT * FROM users WHERE username = ? OR email = ?', [username, username]);
-    if (users.length === 0) {
-      return res.status(401).json({ message: 'Username หรือ Password ไม่ถูกต้อง' });
-    }
-    const user = users[0];
-
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Username หรือ Password ไม่ถูกต้อง' });
-    }
-
-    const secretKey = process.env.JWT_SECRET || 'my_super_secret_key_12345';
-
-    const token = jwt.sign(
-      {
-        user_id: user.user_id,
-        username: user.username,
-        role: user.role
-      },
-      secretKey,
-      { expiresIn: '2h' }
-    );
-
-    return res.status(200).json({
-      message: 'เข้าสู่ระบบสำเร็จ',
-      token: token,
-      user: { user_id: user.user_id, username: user.username, name: user.name, role: user.role } // ส่งกลับไปให้ React ใช้แสดงชื่อ
-    });
-
-  } catch (error) {
-    console.error('Error in login:', error);
-    return res.status(500).json({ message: 'เกิดข้อผิดพลาดจากเซิร์ฟเวอร์' });
-  }
-};
+import db from '../config/db.js';
 
 export const register = async (req, res) => {
-  try {
-    const { username, password, name, role, type, status, email, phone, department, supervisor_id } = req.body;
+  const { name, email, password } = req.body;
 
-    if (!username || !password || !name) {
-      return res.status(400).json({ message: 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน (username, password, name)' });
+  try {
+    const [existingUser] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
+    if (existingUser.length > 0) {
+      return res.status(400).json({ message: 'อีเมลนี้ถูกใช้งานแล้ว' });
     }
-    const [existingUsers] = await pool.execute('SELECT * FROM users WHERE username = ?', [username]);
-    if (existingUsers.length > 0) {
-      return res.status(400).json({ message: 'Username นี้ถูกใช้งานแล้ว' });
-    }
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
 
     const sql = `
             INSERT INTO users 
@@ -136,14 +86,7 @@ export const getUserById = async (req, res) => {
       [id]
     );
 
-    if (rows.length === 0) {
-      return res.status(404).json({ message: "ไม่พบข้อมูลผู้ใช้งาน" });
-    }
-
-    res.status(200).json({
-      message: "ดึงข้อมูลสำเร็จ",
-      user: rows[0]
-    });
+    res.status(201).json({ message: 'สมัครสมาชิกสำเร็จ', userId: result.insertId });
   } catch (error) {
     console.error("Error in getUserById:", error);
     res.status(500).json({ message: "เกิดข้อผิดพลาดที่เซิร์ฟเวอร์" });

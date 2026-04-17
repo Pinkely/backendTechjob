@@ -1,12 +1,9 @@
-import express from "express";
-import {
-  getMaterialById,
-  approveMaterialRequest, 
-  getAllMaterials, addNewMaterial, updateMaterialById, deleteMaterialById
+import express from 'express';
+import { getAllMaterials } from '../controllers/materialController.js';
 
-} from "../controllers/materialController.js";
+const router = express.Router();
 
-const materialRouter = express.Router();
+router.get('/', getAllMaterials);
 
 // --- หมวดหมู่ Materials ---
 

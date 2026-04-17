@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import db from '../config/db.js';
 
 const query = async (sql, params) => {
   const [rows] = await pool.execute(sql, params);
@@ -22,23 +23,23 @@ export const getAllMaterials = async () => {
     return await query("SELECT * FROM material ORDER BY material_id DESC", []);
 };
 
+
 // POST เพิ่มวัสดุใหม่
 export const addNewMaterial = async ({ material_code, name, quantity, unit }) => {
-    const sql = "INSERT INTO material (material_code, name, quantity, unit, status) VALUES (?, ?, ?, ?, 'มี')";
-    return await query(sql, [material_code, name, quantity, unit]);
+  const sql = "INSERT INTO material (material_code, name, quantity, unit, status) VALUES (?, ?, ?, ?, 'มี')";
+  return await query(sql, [material_code, name, quantity, unit]);
 };
 
 // PUT แก้ไขวัสดุ
 export const updateMaterialById = async (id, { name, quantity, unit }) => {
-    const sql = "UPDATE material SET name=?, quantity=?, unit=? WHERE material_id=?";
-    return await query(sql, [name, quantity, unit, id]);
+  const sql = "UPDATE material SET name=?, quantity=?, unit=? WHERE material_id=?";
+  return await query(sql, [name, quantity, unit, id]);
 };
 
 // DELETE ลบวัสดุ
 export const deleteMaterialById = async (id) => {
-    return await query("DELETE FROM material WHERE material_id=?", [id]);
+  return await query("DELETE FROM material WHERE material_id=?", [id]);
 };
-
 
 
 export const approveMaterialRequest = async ({ id, status, admin_id }) => {
