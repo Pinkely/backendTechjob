@@ -29,41 +29,33 @@ materialRouter.get("/:id", async (req, res) => {
 });
 
 materialRouter.patch('/request/:id/approve', async (req, res) => {
-  // #swagger.tags = ['Materials']
-  // #swagger.summary = 'อนุมัติหรือปฏิเสธคำขอเบิกอุปกรณ์'
-  /* #swagger.parameters['id'] = { description: 'Request ID' } */
-  /* #swagger.parameters['body'] = {
-      in: 'body',
-      schema: { status: 'approved', admin_id: 1 }
-  } */
   try {
-    const { id } = req.params
-    const { status, admin_id } = req.body
+    const { id } = req.params;
+    const { status, admin_id } = req.body;
 
     if (!status) {
-      return res.status(400).json({ message: 'Bad Request: กรุณาระบุ status' })
+      return res.status(400).json({ message: 'Bad Request: กรุณาระบุ status' });
     }
 
-    const result = await approveMaterialRequest({ id, status, admin_id })
+    const result = await approveMaterialRequest({ id, status, admin_id });
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Not Found: ไม่พบข้อมูลคำขอนี้' })
+      return res.status(404).json({ message: 'Not Found: ไม่พบข้อมูลคำขอนี้' });
     }
 
-    res.status(200).json({ message: 'Updated status successfully' })
+    res.status(200).json({ message: 'อัปเดตสถานะและตัดยอดสต็อกเรียบร้อยแล้ว' });
   } catch (error) {
-    console.log(error)
-    res.status(500).json({ message: 'Internal Server Error' })
+    console.error(error);
+    // ส่ง message จาก throw new Error(...) ใน controller ไปแสดงที่หน้าเว็บ
+    res.status(400).json({ message: error.message || 'Internal Server Error' });
   }
-})
-
+});
 
 
 // 1. ดึงรายการวัสดุทั้งหมด 
 materialRouter.get('/', async (req, res) => {
     try {
         const rows = await getAllMaterials();
-        console.log('ดึงข้อมูลสำเร็จ! เริสมาก');
         res.status(200).json(rows);
     } catch (error) {
         console.log(error);
