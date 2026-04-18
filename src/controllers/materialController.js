@@ -23,11 +23,6 @@ export const getAllMaterials = async () => {
     return await query("SELECT * FROM material ORDER BY material_id DESC", []);
 };
 
-// เพิ่มฟังก์ชันนี้ใน materialController.js
-export const getAllRequests = async () => {
-    // สมมติว่าตารางชื่อ request หรือ material_request
-    return await query("SELECT * FROM material_request ORDER BY id DESC", []);
-};
 
 // POST เพิ่มวัสดุใหม่
 export const addNewMaterial = async ({ material_code, name, quantity, unit }) => {
@@ -49,8 +44,29 @@ export const deleteMaterialById = async (id) => {
 
 export const approveMaterialRequest = async ({ id, status, admin_id }) => {
   const [result] = await pool.execute(
-    "UPDATE material_request SET status = ?, admin_id = ? WHERE id = ?",
+    // แก้ไขจาก WHERE id = ? เป็น WHERE request_id = ?
+    "UPDATE material_request SET status = ?, admin_id = ? WHERE request_id = ?",
     [status, admin_id || null, id]
   )
   return result
-} 
+}
+
+// แก้ไขฟังก์ชันนี้ใน materialController.js
+export const getAllRequests = async () => {
+    // JOIN ข้อมูลตารางวัสดุ และตารางผู้ใช้งาน เพื่อเอาชื่อมาแสดงผล
+    const sql = `
+        SELECT 
+            mr.request_id, 
+            mr.quantity, 
+            mr.status, 
+            mr.request_at,
+            m.name AS material_name, 
+            m.unit,
+            u.name AS tech_name
+        FROM material_request mr
+        LEFT JOIN material m ON mr.material_id = m.material_id
+        LEFT JOIN users u ON mr.technician_id = u.user_id
+        ORDER BY mr.request_id DESC
+    `;
+    return await query(sql, []);
+};

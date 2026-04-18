@@ -7,7 +7,7 @@ import {
     approveMaterialRequest, 
     addNewMaterial, 
     updateMaterialById, 
-    deleteMaterialById 
+    deleteMaterialById
 } from '../controllers/materialController.js';
 
 const materialRouter = express.Router();
