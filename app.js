@@ -25,8 +25,7 @@ app.use(express.json());
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
 // ทำให้โฟลเดอร์ uploads เป็น static เพื่อให้เข้าถึงรูปผ่าน URL ได้
-app.use('/uploads', express.static('uploads'));
-
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 app.use('/api/auth', loginRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/manager', managerRoutes);
