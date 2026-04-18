@@ -25,7 +25,7 @@ app.use('/api/auth', loginRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/manager', managerRoutes);
 app.use('/api/material', materialRoutes);
-app.use("/materials", materialRoutes);
+app.use("/materials", materialRoutes);  
 app.use("/works", workRoutes);
 
 app.listen(PORT, () => {
