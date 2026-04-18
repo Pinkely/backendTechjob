@@ -7,12 +7,14 @@ import {
     updateUserProfile,
     updatePassword,
     getWorkRecords,
+    upload,
+    updateAvatar,
 } from '../controllers/managerController.js';
 
 const router = express.Router();
 
 router.get('/profile/:id', getUserProfile);
-router.get('/employees', getAllEmployeesWithHistory);
+router.post('/upload-avatar/:id', upload.single('avatar'), updateAvatar); router.get('/employees', getAllEmployeesWithHistory);
 router.get('/financial-report', getFinancialReport);
 router.get('/inventory', getMaterialUsage);
 // เพิ่มเส้นทางสำหรับการ Update (ใช้ PUT)

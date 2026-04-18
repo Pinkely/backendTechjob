@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import cors from 'cors';
 import dotenv from "dotenv";
 import swaggerUi from "swagger-ui-express";
@@ -23,12 +24,14 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
+// ทำให้โฟลเดอร์ uploads เป็น static เพื่อให้เข้าถึงรูปผ่าน URL ได้
+app.use('/uploads', express.static('uploads'));
 
 app.use('/api/auth', loginRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/manager', managerRoutes);
 app.use('/api/material', materialRoutes);
-app.use("/materials", materialRoutes);  
+app.use("/materials", materialRoutes);
 app.use("/works", workRoutes);
 app.use("/technicians", technicianRoutes);
 app.use("/api/materials", materialRoutes);

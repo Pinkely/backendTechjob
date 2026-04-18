@@ -1,15 +1,79 @@
 import db from '../config/db.js';
 import bcrypt from 'bcryptjs';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs'; // นำเข้าโมดูลจัดการไฟล์ของ Node.js
+
+// ตั้งค่าการเก็บไฟล์
+const uploadDir = 'uploads/';
+
+// ตรวจสอบว่ามีโฟลเดอร์ uploads หรือยัง ถ้ายังไม่มีให้สร้างอัตโนมัติ
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+    console.log(`📁 สร้างโฟลเดอร์ ${uploadDir} อัตโนมัติแล้ว`);
+}
+
+// ตั้งค่า Multer
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadDir); // ใช้ตัวแปรที่เราสร้างและตรวจสอบไว้แล้ว
+    },
+    filename: (req, file, cb) => {
+        // ตั้งชื่อไฟล์ใหม่ ป้องกันชื่อซ้ำกัน
+        cb(null, 'profile-' + Date.now() + path.extname(file.originalname));
+    }
+});
+
+export const upload = multer({ storage: storage });
+
+// ---------------------------------------------------------
+// ฟังก์ชันอัปโหลดรูปโปรไฟล์ (แก้ปัญหาข้อที่ 2)
+// ---------------------------------------------------------
+export const updateAvatar = async (req, res) => {
+    const { id } = req.params;
+
+    // ถ้าไม่มีไฟล์ส่งมาเลย
+    if (!req.file) {
+        return res.status(400).json({ message: "กรุณาเลือกไฟล์รูปภาพ" });
+    }
+
+    const newAvatarName = req.file.filename;
+
+    try {
+        // 1. ดึงข้อมูลผู้ใช้เพื่อดูว่ามีรูปเก่าอยู่หรือไม่
+        const [users] = await db.execute('SELECT avatar FROM users WHERE user_id = ?', [id]);
+
+        if (users.length > 0) {
+            const oldAvatar = users[0].avatar;
+
+            // 2. ถ้ารูปเก่ามีอยู่จริง (ไม่เป็น null) และมีไฟล์อยู่ในโฟลเดอร์ ให้ทำการลบทิ้ง
+            if (oldAvatar) {
+                const oldAvatarPath = path.join(process.cwd(), uploadDir, oldAvatar);
+
+                // เช็คว่าไฟล์เก่ามีอยู่จริงไหมก่อนลบ ป้องกันระบบพัง
+                if (fs.existsSync(oldAvatarPath)) {
+                    fs.unlinkSync(oldAvatarPath); // คำสั่งลบไฟล์
+                    console.log(`🗑️ ลบรูปโปรไฟล์เก่าทิ้งแล้ว: ${oldAvatar}`);
+                }
+            }
+        }
+
+        // 3. อัปเดตชื่อรูปใหม่ลง Database
+        const updateQuery = `UPDATE users SET avatar = ? WHERE user_id = ?`;
+        await db.execute(updateQuery, [newAvatarName, id]);
+
+        res.json({ message: "อัปโหลดรูปภาพสำเร็จ", avatar: newAvatarName });
+    } catch (error) {
+        console.error("🔥 Error updating avatar:", error.message);
+        res.status(500).json({ message: "เกิดข้อผิดพลาดในการบันทึกรูปภาพ" });
+    }
+};
 
 // ดึงข้อมูลส่วนตัวของผู้ใช้ตาม ID
 export const getUserProfile = async (req, res) => {
     const { id } = req.params;
     try {
-        const query = `
-            SELECT name, email, phone 
-            FROM users 
-            WHERE user_id = ?
-        `;
+        const query = `SELECT name, email, phone, avatar FROM users WHERE user_id = ?`;
         const [users] = await db.execute(query, [id]);
 
         if (users.length > 0) {
