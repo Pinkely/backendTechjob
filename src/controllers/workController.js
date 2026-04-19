@@ -1,10 +1,10 @@
 import pool from '../config/db.js'
 
-export const createWork = async ({ job_name, customer_name, job_type, job_detail, location, start_date, work_time, supervisor_id, admin_id }) => {
+export const createWork = async ({ job_name, customer_name, job_type, job_detail, location, start_date, work_time, job_price, supervisor_id, admin_id }) => {
   const [rows] = await pool.execute(
-    `INSERT INTO work (job_name, customer_name, job_type, job_detail, location, start_date, work_time, supervisor_id, admin_id) 
-     VALUES (?,?,?,?,?,?,?,?,?)`,
-    [job_name, customer_name, job_type, job_detail, location, start_date, work_time, supervisor_id, admin_id]
+    `INSERT INTO work (job_name, customer_name, job_type, job_detail, location, start_date, work_time, job_price, supervisor_id, admin_id) 
+     VALUES (?,?,?,?,?,?,?,?,?,?)`,
+    [job_name, customer_name, job_type, job_detail, location, start_date, work_time, job_price || 0, supervisor_id, admin_id]
   )
   return rows
 }
@@ -33,8 +33,8 @@ export const getAllWorks = async () => {
            IFNULL(SUM(e.material_cost), 0) AS material_cost,
            IFNULL(SUM(e.other_cost), 0)    AS other_cost,
            IFNULL(SUM(e.total_cost), 0)    AS total_cost,
-           IFNULL(SUM(e.revenue), 0)       AS revenue,
-           IFNULL(SUM(e.profit), 0)        AS profit
+           -- คำนวณกำไรสดๆ: เอารายรับ(job_price) ลบด้วย ต้นทุนรวม(total_cost)
+           (w.job_price - IFNULL(SUM(e.total_cost), 0)) AS profit
     FROM work w
     LEFT JOIN work_expense e ON w.work_id = e.work_id
     GROUP BY w.work_id
@@ -47,10 +47,10 @@ export const getWorkById = async (id) => {
   return rows
 }
 
-export const updateWork = async ({ work_id, job_name, customer_name, job_type, job_detail, location, start_date, work_time, supervisor_id, admin_id }) => {
+export const updateWork = async ({ work_id, job_name, customer_name, job_type, job_detail, location, start_date, work_time, job_price, supervisor_id, admin_id }) => {
   const [result] = await pool.execute(
-    `UPDATE work SET job_name = ?, customer_name = ?, job_type = ?, job_detail = ?, location = ?, start_date = ?, work_time = ?, supervisor_id = ?, admin_id = ? WHERE work_id = ?`,
-    [job_name, customer_name, job_type, job_detail, location, start_date, work_time, supervisor_id, admin_id, work_id]
+    `UPDATE work SET job_name = ?, customer_name = ?, job_type = ?, job_detail = ?, location = ?, start_date = ?, work_time = ?, job_price = ?, supervisor_id = ?, admin_id = ? WHERE work_id = ?`,
+    [job_name, customer_name, job_type, job_detail, location, start_date, work_time, job_price || 0, supervisor_id, admin_id, work_id]
   )
   return result
 }
