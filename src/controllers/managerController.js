@@ -87,7 +87,7 @@ export const getUserProfile = async (req, res) => {
     }
 };
 
-// 1. ฟังก์ชันสำหรับหน้า จัดการบัญชีพนักงาน (แก้ SQL ให้ปลอดภัยแล้ว)
+// 1. ฟังก์ชันสำหรับหน้า จัดการบัญชีพนักงาน
 export const getAllEmployeesWithHistory = async (req, res) => {
     try {
         // ดึงเฉพาะ user ที่ไม่ใช่ manager
@@ -97,9 +97,19 @@ export const getAllEmployeesWithHistory = async (req, res) => {
             WHERE role != 'manager'
         `);
 
+        // 🌟 แก้ไข SQL ให้ดึงข้อมูล รายได้, ต้นทุน และ กำไร มาด้วย
         const [workHistory] = await db.execute(`
-            SELECT wa.technician_id, w.* FROM work_assign wa 
+            SELECT 
+                wa.technician_id, w.*,
+                IFNULL(we.material_cost, 0) as material_cost,
+                IFNULL(we.other_cost, 0) as other_cost,
+                IFNULL(we.total_cost, 0) as total_cost,
+                IFNULL(we.revenue, 0) as revenue,
+                IFNULL(we.profit, 0) as profit
+            FROM work_assign wa 
             JOIN work w ON wa.work_id = w.work_id
+            LEFT JOIN work_expense we ON w.work_id = we.work_id
+            ORDER BY w.start_date DESC
         `);
 
         res.json({ employees, workHistory });
@@ -108,10 +118,6 @@ export const getAllEmployeesWithHistory = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-
-// 2. ฟังก์ชันสำหรับหน้า Manager Dashboard (กู้คืนมาให้แล้ว + ปรับชื่อคอลัมน์นิดหน่อย)
-// 2. ฟังก์ชันสำหรับหน้า Manager Dashboard (แก้ไข SQL ให้ตรงกับฐานข้อมูล)
-
 // ฟังก์ชันสำหรับหน้า Manager Record (ประวัติงานและสถานะทั้งหมด)
 export const getWorkRecords = async (req, res) => {
     try {
@@ -122,9 +128,12 @@ export const getWorkRecords = async (req, res) => {
                 IFNULL(we.material_cost, 0) as material_cost,
                 IFNULL(we.other_cost, 0) as other_cost,
                 IFNULL(we.revenue, 0) as revenue,
-                IFNULL(we.profit, 0) as profit
+                IFNULL(we.profit, 0) as profit,
+                u.name AS technician_name -- ดึงชื่อช่างมาด้วย
             FROM work w
             LEFT JOIN work_expense we ON w.work_id = we.work_id
+            LEFT JOIN work_assign wa ON w.work_id = wa.work_id
+            LEFT JOIN users u ON wa.technician_id = u.user_id
             ORDER BY w.work_id DESC
         `;
         const [records] = await db.execute(query);
@@ -141,16 +150,17 @@ export const getFinancialReport = async (req, res) => {
     SELECT 
         w.start_date, 
         w.work_id,
+        w.job_type, -- เพิ่มการดึงประเภทงานมาแยกประเภท
         IFNULL(we.revenue, 0) as revenue,
+        IFNULL(we.material_cost, 0) as material_cost,
+        IFNULL(we.other_cost, 0) as other_cost,
         IFNULL(we.total_cost, 0) as total_cost,
         IFNULL(we.profit, 0) as profit
     FROM work w
-    LEFT JOIN work_expense we ON w.work_id = we.work_id
-    WHERE YEAR(w.start_date) = ?
+    JOIN work_expense we ON w.work_id = we.work_id -- เปลี่ยนจาก LEFT JOIN เป็น JOIN เพื่อดึงเฉพาะงานที่มีรายรับจ่ายแล้ว
+    WHERE YEAR(w.start_date) = ? AND w.status = 'เสร็จสิ้น'
 `;
-
         const [records] = await db.execute(query, [year]);
-
         res.json(records);
     } catch (error) {
         console.error("🔥 จุดที่พังใน getFinancialReport:", error.message);
