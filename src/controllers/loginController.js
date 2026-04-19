@@ -26,6 +26,8 @@ export const login = async (req, res) => {
 
         // 3. แปลงคอลัมน์ role จาก Database ให้ตรงกับ Path ที่ App.jsx ใช้
         let appRole = '';
+        let additionalData = {};
+
         switch (user.role) {
             case 'admin':
                 appRole = 'admin';
@@ -35,9 +37,27 @@ export const login = async (req, res) => {
                 break;
             case 'supervisor':
                 appRole = 'leader'; // แปลง supervisor เป็น leader เพื่อไปหน้า /leader
+                try {
+                    const [supRows] = await db.execute('SELECT supervisor_id, name FROM supervisors WHERE email = ?', [user.email]);
+                    if (supRows.length > 0) {
+                        additionalData.supervisor_id = supRows[0].supervisor_id;
+                        additionalData.name = supRows[0].name; // อัปเดตชื่อให้ตรงกับตาราง supervisors
+                    }
+                } catch (err) {
+                    console.error("Error fetching supervisor_id:", err);
+                }
                 break;
             case 'technician':
                 appRole = 'user';   // แปลง technician เป็น user เพื่อไปหน้า /user
+                try {
+                    const [techRows] = await db.execute('SELECT technician_id, name FROM technicians WHERE email = ?', [user.email]);
+                    if (techRows.length > 0) {
+                        additionalData.technician_id = techRows[0].technician_id;
+                        additionalData.name = techRows[0].name; // อัปเดตชื่อให้ตรงกับตาราง technicians
+                    }
+                } catch (err) {
+                    console.error("Error fetching technician_id:", err);
+                }
                 break;
             default:
                 appRole = 'user';
@@ -50,7 +70,8 @@ export const login = async (req, res) => {
                 id: user.user_id,   // *แก้จาก user.id เป็น user.user_id ตามชื่อคอลัมน์ในภาพ
                 name: user.name,
                 email: user.email,
-                role: appRole       // ส่ง Role ที่แปลงแล้วกลับไป
+                role: appRole,      // ส่ง Role ที่แปลงแล้วกลับไป
+                ...additionalData   // ค่า name ใน additionalData จะเขียนทับ name ด้านบน
             }
         });
 

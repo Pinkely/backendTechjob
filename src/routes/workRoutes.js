@@ -1,8 +1,8 @@
 import { Router } from 'express'
-import { 
-  createWork, assignWorkToUser, getWorksByUserId, getAllWorks, getWorkById, 
-  updateWork, deleteWork, getWorksByTechnicianId, updateWorkStatus, 
-  getWorksBySupervisorId, updateTechnicianStatus, reviewWork 
+import {
+  createWork, assignWorkToUser, getWorksByUserId, getAllWorks, getWorkById,
+  updateWork, deleteWork, getWorksByTechnicianId, updateWorkStatus,
+  getWorksBySupervisorId, getWorksBySupervisorIdToday, updateTechnicianStatus, reviewWork
 } from '../controllers/workController.js'
 
 const workRouter = Router()
@@ -12,19 +12,11 @@ const workRouter = Router()
 workRouter.post('/creatework', async (req, res) => {
   // #swagger.tags = ['Works']
   // #swagger.summary = 'สร้างใบงานใหม่'
-  /* #swagger.parameters['body'] = {
-      in: 'body',
-      schema: {
-        job_name: 'งานซ่อมบำรุง', customer_name: 'คุณสมชาย', job_type: 'ไฟฟ้า',
-        job_detail: 'ไฟดับชั้น 2', location: 'ตึก A', start_date: '2024-03-25',
-        work_time: '09:00', supervisor_id: 1, admin_id: 1
-      }
-  } */
   try {
     const rows = await createWork(req.body)
     res.status(201).json({ message: 'Created', workId: rows.insertId })
   } catch (error) {
-    console.log(error) 
+    console.log(error)
     res.status(500).json({ message: 'Internal Server Error' })
   }
 })
@@ -32,11 +24,6 @@ workRouter.post('/creatework', async (req, res) => {
 workRouter.post('/assign/:id', async (req, res) => {
   // #swagger.tags = ['Works']
   // #swagger.summary = 'มอบหมายงานให้ช่าง'
-  /* #swagger.parameters['id'] = { description: 'Work ID' } */
-  /* #swagger.parameters['body'] = {
-      in: 'body',
-      schema: { technician_id: 5 }
-  } */
   try {
     const { id } = req.params
     const { technician_id } = req.body
@@ -58,18 +45,6 @@ workRouter.get('/getAll', async (req, res) => {
   }
 })
 
-// workRouter.get('/user/:id', async (req, res) => {
-//   // #swagger.tags = ['Works']
-//   // #swagger.summary = 'ดึงข้อมูลใบงานตาม ID ผู้ใช้งาน'
-//   try {
-//     const { id } = req.params
-//     const rows = await getWorksByUserId(id)
-//     res.status(200).json({ message: 'Ok', works: rows })
-//   } catch (error) {
-//     res.status(500).json({ message: 'Internal Server Error' })
-//   }
-// })
-
 workRouter.get('/getById/:id', async (req, res) => {
   // #swagger.tags = ['Works']
   // #swagger.summary = 'ดึงข้อมูลใบงานตาม ID'
@@ -87,15 +62,6 @@ workRouter.get('/getById/:id', async (req, res) => {
 workRouter.put('/update/:id', async (req, res) => {
   // #swagger.tags = ['Works']
   // #swagger.summary = 'อัปเดตรายละเอียดใบงาน'
-  /* #swagger.parameters['id'] = { description: 'Work ID' } */
-  /* #swagger.parameters['body'] = {
-      in: 'body',
-      schema: {
-        job_name: 'ชื่อโครงการใหม่', customer_name: 'ชื่อลูกค้า', job_type: 'ประเภทงาน',
-        job_detail: 'รายละเอียด', location: 'สถานที่', start_date: '2024-03-25',
-        work_time: '10:00', supervisor_id: 1, admin_id: 1
-      }
-  } */
   try {
     const { id } = req.params
     const result = await updateWork({ ...req.body, work_id: id })
@@ -121,12 +87,27 @@ workRouter.delete('/delete/:id', async (req, res) => {
   }
 })
 
+// ✅ ดึงงานทั้งหมดของ supervisor — ใช้ใน LeaderDashboard (รายการงานทั้งหมด)
 workRouter.get('/supervisor/:id', async (req, res) => {
   // #swagger.tags = ['Works']
   // #swagger.summary = 'ดึงใบงานตาม ID หัวหน้างาน (Supervisor)'
   try {
     const { id } = req.params
     const rows = await getWorksBySupervisorId(id)
+    res.status(200).json({ message: 'Ok', works: rows })
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ message: 'Internal Server Error' })
+  }
+})
+
+// ✅ ดึงงานของ supervisor ที่ start_date = วันนี้ — ใช้นับ "งานวันนี้" ใน Dashboard
+workRouter.get('/supervisor/:id/today', async (req, res) => {
+  // #swagger.tags = ['Works']
+  // #swagger.summary = 'ดึงใบงานของ Supervisor ที่ start_date เป็นวันนี้'
+  try {
+    const { id } = req.params
+    const rows = await getWorksBySupervisorIdToday(id)
     res.status(200).json({ message: 'Ok', works: rows })
   } catch (error) {
     console.log(error)
@@ -169,12 +150,6 @@ workRouter.patch('/:id/assign/:techId/status', async (req, res) => {
 workRouter.patch('/:id/assign/:techId/review', async (req, res) => {
   // #swagger.tags = ['Works']
   // #swagger.summary = 'หัวหน้างานตรวจรับงานและประเมิน'
-  /* #swagger.parameters['id'] = { description: 'Work ID' } */
-  /* #swagger.parameters['techId'] = { description: 'Technician ID' } */
-  /* #swagger.parameters['body'] = {
-      in: 'body',
-      schema: { status: 'completed', comment: 'งานเรียบร้อยดี' }
-  } */
   reviewWork(req, res);
 });
 
