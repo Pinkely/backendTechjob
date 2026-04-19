@@ -3,7 +3,7 @@ import {
   createWork, assignWorkToUser, getWorksByUserId, getAllWorks, getWorkById,
   updateWork, deleteWork, getWorksByTechnicianId, updateWorkStatus,
   getWorksBySupervisorId, getWorksBySupervisorIdToday, updateTechnicianStatus, reviewWork,
-  getExpensesByWorkId
+  getExpensesByWorkId, uploadReport, uploadReportImages
 } from '../controllers/workController.js'
 
 const workRouter = Router()
@@ -169,5 +169,27 @@ workRouter.get('/:id/expenses', async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error', error: error.message });
   }
 })
+
+workRouter.get('/technician/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const rows = await getWorksByTechnicianId(id)
+    res.status(200).json({ message: 'Ok', works: rows })
+  } catch (error) {
+    res.status(500).json({ message: 'Internal Server Error', error: error.message })
+  }
+})
+workRouter.patch('/:id/assign/:techId/review', async (req, res) => {
+  reviewWork(req, res)
+})
+workRouter.post(
+  '/:workId/report-images',
+  uploadReport.fields([
+    { name: 'before_image', maxCount: 1 },
+    { name: 'after_image',  maxCount: 1 },
+    { name: 'other_image',  maxCount: 1 },
+  ]),
+  uploadReportImages
+)
 
 export default workRouter

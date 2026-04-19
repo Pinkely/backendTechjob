@@ -6,6 +6,7 @@ import {
   updatePassword,
   updateUser,
   register,
+  getMySupervisor
   
 } from "../controllers/UserController.js";
 
@@ -33,5 +34,9 @@ userRouter.patch("/password/:id", updatePassword);
 // ─── Delete User ──────────────────────────────────────────────────────────────
 // DELETE /api/users/:id  (แก้จาก /user/:id เพื่อให้ตรงกับ AdminAccount.jsx)
 userRouter.delete("/:id", deleteUser);
+
+userRouter.get('/:id/supervisor',  getMySupervisor)
+
+userRouter.get('/:id',    getUserById)
 
 export default userRouter;

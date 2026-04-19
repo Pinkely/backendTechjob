@@ -198,3 +198,28 @@ export const updatePassword = async (req, res) => {
     res.status(500).json({ message: "เกิดข้อผิดพลาดที่เซิร์ฟเวอร์" });
   }
 };
+
+// ─── ✅ ดึงข้อมูลหัวหน้าของช่างคนนี้  GET /api/users/:id/supervisor ────────────
+export const getMySupervisor = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await pool.query(
+      `SELECT s.user_id AS supervisor_id, s.name, s.nickname,
+              s.phone, s.email, s.department
+       FROM users u
+       INNER JOIN users s ON u.supervisor_id = s.user_id
+       WHERE u.user_id = ?`, // แก้ไข: ใส่ Backticks และลบลูกน้ำ (,) ด้านหลัง ? ออก
+      [id]
+    );
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "ไม่พบข้อมูลหัวหน้า" });
+    }
+      
+    res.status(200).json({ message: "ดึงข้อมูลหัวหน้าสำเร็จ", supervisor: rows[0] });
+  } catch (error) {
+    console.error('getMySupervisor error:', error);
+    res.status(500).json({ message: "เกิดข้อผิดพลาด", error: error.message });
+  }
+};
+
