@@ -70,3 +70,27 @@ export const getAllRequests = async () => {
     `;
     return await query(sql, []);
 };
+
+//โชว์ประวัติการขอวัสดุของช่างแต่ละคน
+export const getRequestsByUserId = async (userId) => {
+    try {
+        const sql = `
+            SELECT 
+                mr.request_id, 
+                mr.quantity, 
+                IFNULL(mr.status, 'รอดำเนินการ') AS status, 
+                mr.request_at,
+                -- ถ้า material_id เป็น NULL ให้แสดงชื่อที่ผู้ใช้พิมพ์มา (ถ้ามี) หรือบอกว่าไม่ระบุ
+                IFNULL(m.name, 'วัสดุทั่วไป (ไม่ได้ระบุ ID)') AS material_name
+            FROM material_request mr
+            LEFT JOIN material m ON mr.material_id = m.material_id
+            WHERE mr.technician_id = ?
+            ORDER BY mr.request_at DESC
+        `;
+        const rows = await query(sql, [userId]);
+        return rows;
+    } catch (error) {
+        console.error("Database Error:", error);
+        throw error;
+    }
+};

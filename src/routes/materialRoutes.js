@@ -7,7 +7,8 @@ import {
     approveMaterialRequest, 
     addNewMaterial, 
     updateMaterialById, 
-    deleteMaterialById
+    deleteMaterialById,
+    getRequestsByUserId
 } from '../controllers/materialController.js';
 
 const materialRouter = express.Router();
@@ -100,6 +101,29 @@ materialRouter.put('/:id', async (req, res) => {
         res.status(200).json({ message: 'Updated successfully' });
     } catch (error) {
         console.error(error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
+// [เพิ่มใหม่] ดึงประวัติการเบิกวัสดุ เฉพาะของ User นั้นๆ
+materialRouter.get('/history/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const rows = await getRequestsByUserId(userId); // เรียกใช้ฟังก์ชันที่เราเพิ่งแก้
+        res.status(200).json({ materials: rows });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
+// [เพิ่มใหม่] รับเรื่องการเบิกวัสดุใหม่จากหน้า Dashboard
+materialRouter.post('/request', async (req, res) => {
+    try {
+        // req.body ควรส่ง { user_id, material_name, quantity }
+        await requestMaterial(req.body);
+        res.status(201).json({ message: 'Request Sent Successfully' });
+    } catch (error) {
         res.status(500).json({ message: 'Internal Server Error' });
     }
 });

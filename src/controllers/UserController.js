@@ -157,7 +157,7 @@ export const getUserById = async (req, res) => {
     const [rows] = await pool.query(
       `SELECT user_id, username, name, email, phone, department,
               role, type, status, nickname, expertise,
-              salary
+              salary,created_at
        FROM users WHERE user_id = ?`,
       [id]
     );

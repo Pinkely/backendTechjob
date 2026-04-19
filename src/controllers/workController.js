@@ -19,7 +19,8 @@ export const assignWorkToUser = async ({ work_id, technician_id }) => {
 
 export const getWorksByUserId = async (userId) => {
   const [rows] = await pool.execute(
-    `SELECT w.* FROM work w
+    `SELECT w.*, wa.status AS assign_status
+     FROM work w
      JOIN work_assign wa ON w.work_id = wa.work_id
      WHERE wa.technician_id = ?`,
     [userId]
@@ -50,7 +51,6 @@ export const deleteWork = async (id) => {
   return result
 }
 
-// ✅ ดึงงานทั้งหมดของ supervisor (ใช้แสดงรายการงานทั้งหมดใน Dashboard)
 export const getWorksBySupervisorId = async (supervisorId) => {
   const [rows] = await pool.execute(
     `SELECT * FROM work WHERE supervisor_id = ? ORDER BY created_at DESC`,
@@ -59,7 +59,6 @@ export const getWorksBySupervisorId = async (supervisorId) => {
   return rows
 }
 
-// ✅ ดึงงานของ supervisor ที่ start_date ตรงกับวันนี้ (ใช้นับ "งานวันนี้" ใน Dashboard)
 export const getWorksBySupervisorIdToday = async (supervisorId) => {
   const [rows] = await pool.execute(
     `SELECT * FROM work 
@@ -71,11 +70,14 @@ export const getWorksBySupervisorIdToday = async (supervisorId) => {
   return rows
 }
 
+// ✅ ดึง status จาก work_assign ด้วย (assign_status) เพราะ status จริงอยู่ที่นั่น
 export const getWorksByTechnicianId = async (id) => {
   const [rows] = await pool.execute(
-    `SELECT w.* FROM work w
+    `SELECT w.*, wa.status AS assign_status
+     FROM work w
      JOIN work_assign wa ON w.work_id = wa.work_id
-     WHERE wa.technician_id = ?`,
+     WHERE wa.technician_id = ?
+     ORDER BY w.start_date DESC`,
     [id]
   );
   return rows;
