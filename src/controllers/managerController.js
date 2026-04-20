@@ -118,22 +118,30 @@ export const getAllEmployeesWithHistory = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
 // ฟังก์ชันสำหรับหน้า Manager Record (ประวัติงานและสถานะทั้งหมด)
 export const getWorkRecords = async (req, res) => {
     try {
         const query = `
             SELECT 
-                w.work_id, w.job_name, w.customer_name, w.job_type, 
-                w.job_detail, w.location, w.start_date, w.status,
-                IFNULL(we.material_cost, 0) as material_cost,
-                IFNULL(we.other_cost, 0) as other_cost,
-                IFNULL(we.revenue, 0) as revenue,
-                IFNULL(we.profit, 0) as profit,
-                u.name AS technician_name -- ดึงชื่อช่างมาด้วย
+                w.work_id, 
+                w.job_name, 
+                w.customer_name, 
+                w.job_type, 
+                w.job_detail, 
+                w.location, 
+                w.start_date, 
+                w.status,
+                MAX(IFNULL(we.material_cost, 0)) as material_cost,
+                MAX(IFNULL(we.other_cost, 0)) as other_cost,
+                MAX(IFNULL(we.revenue, 0)) as revenue,
+                MAX(IFNULL(we.profit, 0)) as profit,
+                GROUP_CONCAT(DISTINCT u.name SEPARATOR ', ') AS technician_name 
             FROM work w
             LEFT JOIN work_expense we ON w.work_id = we.work_id
             LEFT JOIN work_assign wa ON w.work_id = wa.work_id
             LEFT JOIN users u ON wa.technician_id = u.user_id
+            GROUP BY w.work_id
             ORDER BY w.work_id DESC
         `;
         const [records] = await db.execute(query);
